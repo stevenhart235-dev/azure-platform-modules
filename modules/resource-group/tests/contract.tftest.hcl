@@ -7,7 +7,7 @@ mock_provider "azurerm" {
 }
 
 run "valid_resource_group_contract" {
-  command = plan
+  command = apply
 
   variables {
     name     = "rg-example-contract-001"
@@ -29,16 +29,21 @@ run "valid_resource_group_contract" {
   }
 
   assert {
-    condition = output.tags == {
+    condition = output.tags == tomap({
       managed_by = "terraform"
       purpose    = "contract-test"
-    }
+    })
     error_message = "The tags output must preserve the exact caller-supplied tag map."
   }
 
   assert {
     condition     = output.id == azurerm_resource_group.this.id
     error_message = "The id output must be derived from azurerm_resource_group.this.id."
+  }
+
+  assert {
+    condition     = length(output.id) > 0
+    error_message = "The id output must be non-empty after the mocked apply."
   }
 }
 
