@@ -17,7 +17,7 @@ module "resource_group" {
   source = "../.."
 
   name     = "rg-example-shared-services-001"
-  location = "placeholder-region"
+  location = "centralus"
 
   tags = {
     business_unit       = "placeholder-business-unit"
