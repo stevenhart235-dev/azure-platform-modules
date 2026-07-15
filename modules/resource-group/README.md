@@ -36,9 +36,12 @@ generate names from local logic.
 
 ```hcl
 terraform {
+  required_version = "= 1.15.8"
+
   required_providers {
     azurerm = {
-      source = "hashicorp/azurerm"
+      source  = "hashicorp/azurerm"
+      version = "~> 4.80"
     }
   }
 }
@@ -64,9 +67,12 @@ module "resource_group" {
 
 ```hcl
 terraform {
+  required_version = "= 1.15.8"
+
   required_providers {
     azurerm = {
-      source = "hashicorp/azurerm"
+      source  = "hashicorp/azurerm"
+      version = "~> 4.80"
     }
   }
 }
@@ -103,6 +109,10 @@ See:
 
 The example directories are standalone root modules with provider
 configuration. They intentionally do not include backend blocks.
+
+Root consumers own provider lock files. Example root lock files may be
+generated during validation, but this module does not commit
+`.terraform.lock.hcl` as part of the reusable child-module contract.
 
 ## Inputs
 
@@ -157,23 +167,44 @@ computing effective enterprise tags before calling this primitive module.
 
 Terraform is the authoritative engine for this platform.
 
-`versions.tf` declares the AzureRM provider source but does not set Terraform
-or AzureRM version constraints yet. The approved minimum supported Terraform
-version and AzureRM provider version are deferred to the M1 engineering
-toolchain and provider strategy decisions.
+This child module declares:
 
-This module should not be released as production-ready until those constraints
-are approved and added.
+- Minimum supported Terraform version: `>= 1.7.0`
+- Supported AzureRM major version: `>= 4.0.0, < 5.0.0`
+
+The approved release-validation toolchain is:
+
+- Terraform CLI: `1.15.8`
+- AzureRM provider: `4.80.0`
+
+Runnable examples use root constraints that match the approved release
+validation baseline:
+
+- Terraform: `= 1.15.8`
+- AzureRM: `~> 4.80`
+
+Root deployments and runnable root examples own provider lock files. Reusable
+child modules must not rely on module-level lock files to define the consumer
+dependency contract.
 
 ## Testing Status
 
 Native Terraform tests are defined under `tests/` using the `.tftest.hcl`
 convention.
 
-Current tests use `command = plan` to validate the module contract without
-deploying Azure resources where practical. Until M1 selects the minimum
-supported Terraform version and provider mocking approach, tests may still
-require normal AzureRM provider initialization and authentication.
+Current tests use Terraform native provider mocking with `command = plan` to
+validate the module contract without requiring a real Azure subscription.
+
+Mocked contract tests validate Terraform configuration behavior such as:
+
+- Input validation.
+- Output wiring.
+- Exact tag pass-through.
+- The `id` output being derived from the managed resource.
+
+Mocked tests do not prove Azure deployment behavior, Azure API behavior,
+provider authentication, or real resource creation. Real Azure deployment
+validation remains required before release acceptance.
 
 ## Limitations
 
@@ -182,7 +213,9 @@ require normal AzureRM provider initialization and authentication.
 - No policy assignments are implemented.
 - No naming metadata or generated naming pattern is implemented.
 - No module release tag has been created.
-- Version constraints are deferred until M1.
+- Stable compatibility with Terraform `1.7.0` and AzureRM `4.0.0` must be
+  validated in the minimum compatibility matrix before a stable release claims
+  that compatibility.
 
 Examples use placeholder values and must not be copied directly into production
 deployment configuration.

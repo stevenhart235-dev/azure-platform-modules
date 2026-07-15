@@ -7,12 +7,14 @@ Current coverage:
 - Valid input contract planning.
 - Output contract values.
 - Tag pass-through behavior.
+- Resource ID output derivation from the resource.
 - Resource group name validation.
-- Tag key validation.
+- Empty location validation.
+- Tag key and value validation.
 
-The current tests use `command = plan`, so they are intended to validate the
-module contract without deploying Azure resources.
+The current tests use Terraform native provider mocking with `command = plan`.
+They are intended to validate the module contract without requiring a real
+Azure subscription.
 
-Provider mocking may be considered after M1 selects the minimum supported
-Terraform version. Until then, tests may still require normal AzureRM provider
-initialization and authentication for planning.
+Mocked tests do not prove Azure deployment behavior. Real Azure deployment
+validation must still run as part of release acceptance.

@@ -1,12 +1,10 @@
 terraform {
-  # TODO(M1): Add the minimum supported Terraform version after the platform
-  # toolchain standard is approved.
+  required_version = ">= 1.7.0"
 
   required_providers {
     azurerm = {
-      source = "hashicorp/azurerm"
-      # TODO(M1): Add the minimum supported AzureRM provider version after the
-      # platform provider strategy is approved.
+      source  = "hashicorp/azurerm"
+      version = ">= 4.0.0, < 5.0.0"
     }
   }
 }
