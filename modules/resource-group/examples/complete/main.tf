@@ -1,3 +1,15 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
 module "resource_group" {
   source = "../.."
 
@@ -5,9 +17,35 @@ module "resource_group" {
   location = "placeholder-region"
 
   tags = {
-    managed_by          = "terraform"
+    business_unit       = "placeholder-business-unit"
+    cost_center         = "placeholder-cost-center"
+    criticality         = "placeholder-criticality"
+    data_classification = "placeholder-data-classification"
     environment         = "placeholder-environment"
+    lifecycle           = "placeholder-lifecycle"
+    managed_by          = "terraform"
+    owner               = "placeholder-owner-group"
+    support_contact     = "placeholder-support-group"
     workload            = "placeholder-workload"
-    data_classification = "placeholder-classification"
   }
+}
+
+output "resource_group_id" {
+  description = "Resource group ID."
+  value       = module.resource_group.id
+}
+
+output "resource_group_name" {
+  description = "Resource group name."
+  value       = module.resource_group.name
+}
+
+output "resource_group_location" {
+  description = "Resource group location."
+  value       = module.resource_group.location
+}
+
+output "resource_group_tags" {
+  description = "Tags applied to the resource group."
+  value       = module.resource_group.tags
 }

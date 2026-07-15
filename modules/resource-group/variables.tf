@@ -31,16 +31,24 @@ variable "location" {
 }
 
 variable "tags" {
-  description = "Tags supplied by the caller. Modules must not invent environment-specific tag values."
+  description = "Tags to apply to the resource group exactly as supplied by the caller."
   type        = map(string)
   default     = {}
   nullable    = false
 
   validation {
     condition = alltrue([
-      for key, value in var.tags :
-      length(trimspace(key)) > 0 && length(trimspace(value)) > 0
+      for key in keys(var.tags) :
+      length(trimspace(key)) > 0 && length(key) <= 512
     ])
-    error_message = "Tag keys and values must be non-empty strings."
+    error_message = "Tag keys must be non-empty and no more than 512 characters."
+  }
+
+  validation {
+    condition = alltrue([
+      for value in values(var.tags) :
+      length(value) <= 256
+    ])
+    error_message = "Tag values must be no more than 256 characters."
   }
 }

@@ -1,18 +1,18 @@
 # Tests
 
-Native Terraform tests using the `.tftest.hcl` convention will be added when
-the Azure resource implementation begins and the M1 engineering toolchain
-milestone defines the approved local and CI validation approach.
+Native Terraform tests use the `.tftest.hcl` convention.
 
-Expected future coverage:
+Current coverage:
 
-- Required input validation.
-- Resource group naming validation.
-- Tag validation.
-- Output contract stability.
-- Example initialization and validation.
+- Valid input contract planning.
+- Output contract values.
+- Tag pass-through behavior.
+- Resource group name validation.
+- Tag key validation.
 
-TODO(M1): Select the module test framework and validation command set.
-TODO(M1): Decide whether provider mocking is available and appropriate after
-the minimum supported Terraform version is selected.
-TODO(M3): Add tests before implementing or releasing this module.
+The current tests use `command = plan`, so they are intended to validate the
+module contract without deploying Azure resources.
+
+Provider mocking may be considered after M1 selects the minimum supported
+Terraform version. Until then, tests may still require normal AzureRM provider
+initialization and authentication for planning.

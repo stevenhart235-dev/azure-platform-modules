@@ -2,51 +2,51 @@
 
 ## Purpose
 
-This module defines the interface for a reusable Azure resource group module.
-It is the reference implementation pattern for future modules in this
-repository.
+This module creates one Azure resource group using an explicit,
+caller-supplied name, location, and tag map.
 
-The module is intentionally scaffold-only at this milestone. It does not create
-an Azure resource group yet.
+It is the first reference implementation for reusable modules in this
+repository. Future modules should follow the same pattern: focused scope,
+typed inputs, useful validation, explicit outputs, environment-neutral behavior,
+and no child-module provider or backend configuration.
+
+## Resource Created
+
+| Resource | Terraform label | Purpose |
+| --- | --- | --- |
+| `azurerm_resource_group` | `this` | Creates the Azure resource group. |
 
 ## Design Philosophy
 
-This module follows the platform standards by keeping caller decisions explicit,
-typed, validated, documented, and environment-neutral.
+The module deliberately avoids hidden naming and tagging behavior.
 
-Design choices:
-
-- Callers supply the final resource group name.
-- Callers supply the Azure location.
-- Callers supply environment-specific tags.
-- Defaults are used only where they are broadly safe.
-- Outputs expose stable composition contracts.
-- Provider and backend configuration remain the responsibility of root
-  deployments.
+- The caller supplies the final resource group name.
+- The caller supplies the Azure location.
+- The caller supplies all tags.
+- Tags are applied exactly as supplied.
+- No provider or backend blocks exist in the child module.
+- No tenant, subscription, region, environment, owner, or cost values are
+  hard-coded in the module.
 
 The naming standard currently recommends explicit caller-supplied names while
-the enterprise naming convention is still being finalized. This module therefore
-does not generate names from hidden local logic.
+the enterprise naming convention is still being finalized. This module does not
+generate names from local logic.
 
-## Current Implementation Status
-
-This scaffold defines the module contract only.
-
-Not implemented yet:
-
-- `azurerm_resource_group`
-- Final Terraform and AzureRM provider version constraints
-- Provider configuration in runnable examples
-- Resource locks
-- Role assignments
-- Policy assignments
-- Module tests
-
-## Example Usage
-
-Basic usage:
+## Basic Usage
 
 ```hcl
+terraform {
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
 module "resource_group" {
   source = "../../"
 
@@ -60,9 +60,21 @@ module "resource_group" {
 }
 ```
 
-Complete usage:
+## Complete Usage
 
 ```hcl
+terraform {
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
 module "resource_group" {
   source = "../../"
 
@@ -70,10 +82,16 @@ module "resource_group" {
   location = "placeholder-region"
 
   tags = {
-    managed_by          = "terraform"
+    business_unit       = "placeholder-business-unit"
+    cost_center         = "placeholder-cost-center"
+    criticality         = "placeholder-criticality"
+    data_classification = "placeholder-data-classification"
     environment         = "placeholder-environment"
+    lifecycle           = "placeholder-lifecycle"
+    managed_by          = "terraform"
+    owner               = "placeholder-owner-group"
+    support_contact     = "placeholder-support-group"
     workload            = "placeholder-workload"
-    data_classification = "placeholder-classification"
   }
 }
 ```
@@ -83,66 +101,88 @@ See:
 - `examples/basic`
 - `examples/complete`
 
-The example directories are standalone root modules. Provider configuration may
-be added to those examples when the Azure resource implementation begins so
-they can be initialized and validated independently. Backend blocks must never
-be added to module examples.
+The example directories are standalone root modules with provider
+configuration. They intentionally do not include backend blocks.
 
 ## Inputs
 
 | Name | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `name` | `string` | yes | n/a | Final Azure resource group name supplied by the caller. |
-| `location` | `string` | yes | n/a | Azure location supplied by the caller. |
-| `tags` | `map(string)` | no | `{}` | Tags supplied by the caller. |
+| `location` | `string` | yes | n/a | Azure location supplied by the caller from deployment configuration. |
+| `tags` | `map(string)` | no | `{}` | Tags to apply exactly as supplied by the caller. |
 
 ## Outputs
 
 | Name | Description |
 | --- | --- |
-| `name` | Final resource group name that will be used by the module. |
-| `location` | Azure location that will be used by the module. |
-| `tags` | Tags that will be applied by the module. |
+| `id` | Resource group ID. |
+| `name` | Resource group name. |
+| `location` | Resource group location. |
+| `tags` | Tags applied to the resource group. |
 
-## Validation
+## Validation Behavior
 
-The scaffold validates:
+The module validates only caller-facing constraints that are useful and aligned
+with Azure resource group behavior.
 
-- Resource group name length.
-- Resource group name characters.
-- Resource group names do not end with a period.
-- Location is provided as a non-empty caller decision.
-- Tag keys and values are non-empty.
+- `name` must be between 1 and 90 characters.
+- `name` may contain letters, numbers, underscores, periods, parentheses, and
+  hyphens.
+- `name` must not end with a period.
+- `location` must be a non-empty string.
+- Tag keys must be non-empty and no more than 512 characters.
+- Tag values must be no more than 256 characters.
 
-## Compatibility
+The module does not validate enterprise naming tokens, tag keys, tag casing, or
+controlled tag values because those platform decisions are deferred to naming,
+tagging, governance, and deployment configuration standards.
+
+## Tag Behavior
+
+The resource group receives `var.tags` exactly as supplied by the caller.
+
+This module does not:
+
+- Add tags.
+- Merge tags.
+- Overwrite caller-supplied tags.
+- Invent enterprise tag values.
+- Supply environment-specific tag defaults.
+
+Root deployments and high-level composition modules are responsible for
+computing effective enterprise tags before calling this primitive module.
+
+## Version Compatibility Status
 
 Terraform is the authoritative engine for this platform.
 
-The exact supported Terraform and AzureRM provider version constraints are
-deferred until the M1 engineering toolchain milestone selects approved
-versions.
+`versions.tf` declares the AzureRM provider source but does not set Terraform
+or AzureRM version constraints yet. The approved minimum supported Terraform
+version and AzureRM provider version are deferred to the M1 engineering
+toolchain and provider strategy decisions.
 
-## TODOs Before Implementation
+This module should not be released as production-ready until those constraints
+are approved and added.
 
-- TODO(M1): Establish the minimum supported Terraform version.
-- TODO(M1): Establish the minimum supported AzureRM provider version.
-- TODO(M1): Add validation and test commands once the local and CI toolchain is
-  approved.
-- TODO(M3): Implement `azurerm_resource_group` after this interface is reviewed
-  and accepted.
-- TODO(M3): Add provider configuration to runnable examples when Azure resource
-  implementation begins. Do not add backend blocks.
-- TODO(M3): Decide whether resource locks belong in this module or a separate
-  composition module.
-- TODO(M3): Decide whether resource-group-level RBAC belongs in this module or
-  a separate role assignment module.
-- TODO(Naming): Revisit whether this module should accept structured naming
-  metadata after the enterprise naming convention is finalized.
+## Testing Status
+
+Native Terraform tests are defined under `tests/` using the `.tftest.hcl`
+convention.
+
+Current tests use `command = plan` to validate the module contract without
+deploying Azure resources where practical. Until M1 selects the minimum
+supported Terraform version and provider mocking approach, tests may still
+require normal AzureRM provider initialization and authentication.
 
 ## Limitations
 
-This module is not deployable as an Azure resource yet. It is a contract and
-documentation scaffold only.
+- No resource locks are implemented.
+- No RBAC assignments are implemented.
+- No policy assignments are implemented.
+- No naming metadata or generated naming pattern is implemented.
+- No module release tag has been created.
+- Version constraints are deferred until M1.
 
 Examples use placeholder values and must not be copied directly into production
 deployment configuration.

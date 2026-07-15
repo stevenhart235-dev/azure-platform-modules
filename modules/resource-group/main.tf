@@ -1,2 +1,5 @@
-# This scaffold intentionally creates no Azure resources yet.
-# TODO(M3): Implement azurerm_resource_group after the module interface is reviewed.
+resource "azurerm_resource_group" "this" {
+  name     = var.name
+  location = var.location
+  tags     = var.tags
+}
