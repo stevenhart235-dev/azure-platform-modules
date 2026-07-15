@@ -1,0 +1,66 @@
+name: Module request
+description: Request a reusable Terraform module or module capability.
+title: "[Module Request]: "
+labels:
+  - module-request
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to describe the platform capability needed. Avoid prescribing implementation unless a constraint is already known.
+  - type: input
+    id: capability
+    attributes:
+      label: Capability
+      description: What reusable platform capability is needed?
+    validations:
+      required: true
+  - type: textarea
+    id: use_cases
+    attributes:
+      label: Use cases
+      description: Which deployment repositories, scenarios, or consumers need this capability?
+    validations:
+      required: true
+  - type: textarea
+    id: inputs
+    attributes:
+      label: Expected caller decisions
+      description: What decisions should consumers be able or required to provide as inputs?
+    validations:
+      required: false
+  - type: textarea
+    id: outputs
+    attributes:
+      label: Expected outputs or integration contracts
+      description: What outputs or downstream contracts are likely needed?
+    validations:
+      required: false
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Note security, policy, networking, identity, naming, tagging, diagnostics, or operational constraints.
+    validations:
+      required: false
+  - type: textarea
+    id: avm
+    attributes:
+      label: Azure Verified Module considerations
+      description: Is there a relevant Azure Verified Module, and does direct use, wrapping, or composition seem appropriate?
+    validations:
+      required: false
+  - type: textarea
+    id: validation
+    attributes:
+      label: Acceptance and validation needs
+      description: What evidence would show that this module is ready to consume?
+    validations:
+      required: false
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Link related ADRs, standards, issues, diagrams, or vendor documentation.
+    validations:
+      required: false

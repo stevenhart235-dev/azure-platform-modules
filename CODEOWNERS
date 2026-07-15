@@ -1,0 +1,15 @@
+# Role-oriented placeholders. Replace these with real repository teams when
+# source-control teams are configured.
+
+* @azure-platform/module-maintainers
+
+/README.md @azure-platform/module-maintainers @azure-platform/docs-maintainers
+/CONTRIBUTING.md @azure-platform/module-maintainers @azure-platform/docs-maintainers
+/SECURITY.md @azure-platform/module-maintainers @azure-platform/security-reviewers
+/CODEOWNERS @azure-platform/module-maintainers @azure-platform/security-reviewers
+
+/modules/ @azure-platform/module-maintainers
+/examples/ @azure-platform/module-maintainers
+/tests/ @azure-platform/module-maintainers
+/scripts/ @azure-platform/module-maintainers
+/.github/ @azure-platform/module-maintainers

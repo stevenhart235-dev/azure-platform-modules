@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a defect in a reusable Terraform module or repository foundation.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provide enough detail to evaluate the defect without including secrets, real tenant IDs, subscription IDs, or sensitive environment data.
+  - type: input
+    id: affected_area
+    attributes:
+      label: Affected area
+      description: Which module, example, test, script, or repository file is affected?
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction details
+      description: Provide minimal sanitized steps, inputs, command output, or plan excerpts.
+    validations:
+      required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Describe consumer impact, deployment risk, or operational urgency.
+    validations:
+      required: false
+  - type: textarea
+    id: version
+    attributes:
+      label: Version information
+      description: Include module version, Terraform version, provider versions, or commit SHA where applicable.
+    validations:
+      required: false
+  - type: textarea
+    id: security
+    attributes:
+      label: Security considerations
+      description: Note whether the issue affects identity, RBAC, policy, network exposure, secrets, encryption, logging, or compliance.
+    validations:
+      required: false
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Link related issues, pull requests, ADRs, standards, or documentation.
+    validations:
+      required: false
