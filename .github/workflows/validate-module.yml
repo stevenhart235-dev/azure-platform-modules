@@ -81,10 +81,12 @@ jobs:
           tflint --init
           tflint --recursive
 
-      - name: Trivy Setup
-        uses: aquasecurity/setup-trivy@v0.3.1
-        with:
-          version: v0.68.2
-
       - name: Trivy
-        run: trivy config --exit-code 1 --severity HIGH,CRITICAL --no-progress .
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          hide-progress: true
