@@ -48,6 +48,8 @@ The module enforces the following storage account settings:
   `infrastructure_encryption_enabled = true`
 - Storage firewall default action deny:
   `network_rules.default_action = "Deny"`
+- Trusted Microsoft services network bypass:
+  `network_rules.bypass = ["AzureServices"]`
 
 These settings are not caller-configurable. This keeps the module aligned with
 the platform remote-state security model, where normal access uses Microsoft
@@ -78,8 +80,9 @@ required:
 - `network_ip_rules`: current public runner or developer egress IPv4 address
   or CIDR range.
 - `network_subnet_ids`: approved subnet resource IDs.
-- `network_bypass`: justified Azure platform bypass values such as `Logging`,
-  `Metrics`, `AzureServices`, or `None`.
+- `network_bypass`: trusted Microsoft services bypass defaults to
+  `AzureServices`; callers may explicitly select `Logging`, `Metrics`,
+  `AzureServices`, or `None`.
 
 These concepts are separate:
 
@@ -93,6 +96,14 @@ These concepts are separate:
 
 Shared key authorization also remains disabled. Allowed network paths still
 require identity-based authentication and Azure RBAC for normal workflows.
+
+`AzureServices` is a limited trusted-services network exception. It does not
+enable anonymous access, does not grant RBAC permissions, and does not allow
+GitHub-hosted runners through the storage firewall. Bootstrap access from a
+GitHub-hosted runner or developer machine still requires an explicit
+`network_ip_rules` entry for the current public egress IP range, or an approved
+subnet path. Deployments that require stricter isolation may set
+`network_bypass = ["None"]`.
 
 The expected future transition is to deploy private endpoint access through a
 separate reusable capability, move runners and operators to private-capable
@@ -205,7 +216,7 @@ generated during validation, but this module does not commit
 | `account_replication_type` | `string` | no | `"LRS"` | Storage account replication type. |
 | `public_network_access_enabled` | `bool` | no | `false` | Whether public network access is enabled for the storage account. |
 | `hierarchical_namespace_enabled` | `bool` | no | `false` | Whether hierarchical namespace is enabled for Azure Data Lake Storage Gen2 behavior. |
-| `network_bypass` | `set(string)` | no | `[]` | Storage firewall bypass values for trusted Azure platform traffic. |
+| `network_bypass` | `set(string)` | no | `["AzureServices"]` | Storage firewall bypass values for trusted Azure platform traffic. |
 | `network_ip_rules` | `set(string)` | no | `[]` | Public IPv4 addresses or CIDR ranges allowed through the storage firewall. |
 | `network_subnet_ids` | `set(string)` | no | `[]` | Virtual network subnet resource IDs allowed through the storage firewall. |
 
@@ -325,7 +336,8 @@ Mocked contract tests validate Terraform configuration behavior such as:
 - Exact tag pass-through.
 - Security baseline settings.
 - Storage firewall default-deny behavior.
-- Empty network allow lists by default.
+- Default trusted services bypass.
+- Empty IP and subnet allow lists by default.
 - Explicit network IP rule, subnet ID, and bypass pass-through.
 - Public network access bootstrap exception wiring.
 - Hierarchical namespace wiring.

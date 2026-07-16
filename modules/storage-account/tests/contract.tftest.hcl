@@ -64,8 +64,8 @@ run "valid_storage_account_contract" {
   }
 
   assert {
-    condition     = length(azurerm_storage_account.this.network_rules[0].bypass) == 0
-    error_message = "The default network bypass allow list must be empty."
+    condition     = toset(azurerm_storage_account.this.network_rules[0].bypass) == toset(["AzureServices"])
+    error_message = "The default network bypass allow list must be exactly AzureServices."
   }
 
   assert {
@@ -90,7 +90,7 @@ run "complete_storage_account_contract" {
     account_replication_type       = "ZRS"
     hierarchical_namespace_enabled = true
     public_network_access_enabled  = true
-    network_bypass                 = ["Logging", "Metrics"]
+    network_bypass                 = ["AzureServices", "Logging", "Metrics"]
     network_ip_rules               = ["203.0.113.10"]
     network_subnet_ids             = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example-network-001/providers/Microsoft.Network/virtualNetworks/vnet-example-001/subnets/snet-example-001"]
   }
@@ -146,8 +146,8 @@ run "complete_storage_account_contract" {
   }
 
   assert {
-    condition     = toset(azurerm_storage_account.this.network_rules[0].bypass) == toset(["Logging", "Metrics"])
-    error_message = "Network bypass values must pass through to the storage account firewall."
+    condition     = toset(azurerm_storage_account.this.network_rules[0].bypass) == toset(["AzureServices", "Logging", "Metrics"])
+    error_message = "Supported network bypass value combinations must pass through to the storage account firewall."
   }
 
   assert {
@@ -158,6 +158,27 @@ run "complete_storage_account_contract" {
   assert {
     condition     = toset(azurerm_storage_account.this.network_rules[0].virtual_network_subnet_ids) == toset(["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example-network-001/providers/Microsoft.Network/virtualNetworks/vnet-example-001/subnets/snet-example-001"])
     error_message = "Network subnet IDs must pass through to the storage account firewall."
+  }
+}
+
+run "explicit_network_bypass_none_contract" {
+  command = apply
+
+  variables {
+    name                = "stexamplenone001"
+    resource_group_name = "rg-example-none-001"
+    location            = "placeholder-region"
+    network_bypass      = ["None"]
+  }
+
+  assert {
+    condition     = toset(azurerm_storage_account.this.network_rules[0].bypass) == toset(["None"])
+    error_message = "Callers must be able to explicitly select network bypass None for stricter isolation."
+  }
+
+  assert {
+    condition     = azurerm_storage_account.this.network_rules[0].default_action == "Deny"
+    error_message = "Selecting network bypass None must preserve the storage firewall default action Deny."
   }
 }
 

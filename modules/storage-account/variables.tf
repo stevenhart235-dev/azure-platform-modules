@@ -100,7 +100,7 @@ variable "hierarchical_namespace_enabled" {
 variable "network_bypass" {
   description = "Storage firewall bypass values for trusted Azure platform traffic. Valid values are Logging, Metrics, AzureServices, and None."
   type        = set(string)
-  default     = []
+  default     = ["AzureServices"]
   nullable    = false
 
   validation {

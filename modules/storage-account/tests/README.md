@@ -14,8 +14,10 @@ Current coverage:
 - Account tier validation.
 - Replication type validation.
 - Storage firewall default-deny behavior.
-- Empty network allow lists by default.
+- Default bypass is exactly `AzureServices`.
+- Empty network IP and subnet allow lists by default.
 - Explicit network IP rule, subnet ID, and bypass pass-through.
+- Explicit `None` bypass pass-through.
 - Public network enabled does not change default action to Allow.
 - Bypass value validation.
 - Bypass `None` combination validation.
