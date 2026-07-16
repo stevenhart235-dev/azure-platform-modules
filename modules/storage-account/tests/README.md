@@ -13,6 +13,12 @@ Current coverage:
 - Empty location validation.
 - Account tier validation.
 - Replication type validation.
+- Storage firewall default-deny behavior.
+- Empty network allow lists by default.
+- Explicit network IP rule, subnet ID, and bypass pass-through.
+- Public network enabled does not change default action to Allow.
+- Bypass value validation.
+- Bypass `None` combination validation.
 - Tag key and value validation.
 
 The current tests use Terraform native provider mocking. They are intended to

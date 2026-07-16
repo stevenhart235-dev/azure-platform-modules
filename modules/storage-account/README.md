@@ -46,6 +46,8 @@ The module enforces the following storage account settings:
   `shared_access_key_enabled = false`
 - Infrastructure encryption enabled:
   `infrastructure_encryption_enabled = true`
+- Storage firewall default action deny:
+  `network_rules.default_action = "Deny"`
 
 These settings are not caller-configurable. This keeps the module aligned with
 the platform remote-state security model, where normal access uses Microsoft
@@ -60,22 +62,42 @@ not created by this module.
 
 ## Bootstrap Public Network Exception
 
-`public_network_access_enabled` is the only network lifecycle exception exposed
-by this module.
+`public_network_access_enabled` is an explicit network lifecycle exception
+exposed by this module.
 
 The secure target state is `false`, and that is the default. A bootstrap lab may
 temporarily set it to `true` so GitHub-hosted runners and authenticated
 developer machines can reach the storage account before private networking,
 private endpoints, and private-capable runners exist.
 
-Enabling public network access does not enable anonymous blob access. Public
-blob/container access remains disabled by the enforced
-`allow_nested_items_to_be_public = false` setting, and shared key authorization
-remains disabled.
+Enabling the public endpoint does not mean access is allowed from all networks.
+The storage firewall still uses `default_action = "Deny"`. Callers must
+explicitly provide one or more of the following when bootstrap access is
+required:
+
+- `network_ip_rules`: current public runner or developer egress IPv4 address
+  or CIDR range.
+- `network_subnet_ids`: approved subnet resource IDs.
+- `network_bypass`: justified Azure platform bypass values such as `Logging`,
+  `Metrics`, `AzureServices`, or `None`.
+
+These concepts are separate:
+
+- Public endpoint enabled: the Azure public endpoint can be reached at the
+  network boundary when `public_network_access_enabled = true`.
+- Anonymous public blob access: disabled by
+  `allow_nested_items_to_be_public = false`; this module does not allow public
+  containers or blobs.
+- Storage firewall default action: always `Deny`; explicit network rules or
+  justified bypass values are required for access through the public endpoint.
+
+Shared key authorization also remains disabled. Allowed network paths still
+require identity-based authentication and Azure RBAC for normal workflows.
 
 The expected future transition is to deploy private endpoint access through a
 separate reusable capability, move runners and operators to private-capable
-network paths, and then disable public network access again.
+network paths, and then disable public network access again. At that point,
+bootstrap IP allow rules should be removed from callers.
 
 ## Basic Usage
 
@@ -139,6 +161,11 @@ module "storage_account" {
   hierarchical_namespace_enabled = true
   public_network_access_enabled  = true
 
+  # Documentation-only placeholder from TEST-NET-3.
+  # Real bootstrap deployments must supply the current runner/developer
+  # public egress IP range or an approved subnet ID.
+  network_ip_rules = ["203.0.113.10"]
+
   tags = {
     business_unit       = "placeholder-business-unit"
     cost_center         = "placeholder-cost-center"
@@ -178,6 +205,9 @@ generated during validation, but this module does not commit
 | `account_replication_type` | `string` | no | `"LRS"` | Storage account replication type. |
 | `public_network_access_enabled` | `bool` | no | `false` | Whether public network access is enabled for the storage account. |
 | `hierarchical_namespace_enabled` | `bool` | no | `false` | Whether hierarchical namespace is enabled for Azure Data Lake Storage Gen2 behavior. |
+| `network_bypass` | `set(string)` | no | `[]` | Storage firewall bypass values for trusted Azure platform traffic. |
+| `network_ip_rules` | `set(string)` | no | `[]` | Public IPv4 addresses or CIDR ranges allowed through the storage firewall. |
+| `network_subnet_ids` | `set(string)` | no | `[]` | Virtual network subnet resource IDs allowed through the storage firewall. |
 
 ## Outputs
 
@@ -205,6 +235,9 @@ with Azure Storage Account behavior.
 - `account_tier` must be one of `Standard` or `Premium`.
 - `account_replication_type` must be one of `LRS`, `GRS`, `RAGRS`, `ZRS`,
   `GZRS`, or `RAGZRS`.
+- `network_bypass` values must be one or more of `Logging`, `Metrics`,
+  `AzureServices`, or `None`.
+- `network_bypass = ["None"]` must not be combined with other bypass values.
 - Tag keys must be non-empty and no more than 512 characters.
 - Tag values must be no more than 256 characters.
 
@@ -212,9 +245,9 @@ The module does not validate enterprise naming tokens, tag keys, tag casing, or
 controlled tag values because those platform decisions are deferred to naming,
 tagging, governance, and deployment configuration standards.
 
-The module also does not expose `account_kind`, access tier, network rules,
-containers, blob properties, private endpoints, RBAC, diagnostics, or locks.
-Those capabilities require separate platform decisions or reusable modules.
+The module also does not expose `account_kind`, access tier, containers, blob
+properties, private endpoints, RBAC, diagnostics, or locks. Those capabilities
+require separate platform decisions or reusable modules.
 
 ## Tag Behavior
 
@@ -271,6 +304,10 @@ Verified AzureRM arguments used by this module:
 - `allow_nested_items_to_be_public`
 - `shared_access_key_enabled`
 - `infrastructure_encryption_enabled`
+- `network_rules.default_action`
+- `network_rules.bypass`
+- `network_rules.ip_rules`
+- `network_rules.virtual_network_subnet_ids`
 - `tags`
 
 ## Testing Status
@@ -287,6 +324,9 @@ Mocked contract tests validate Terraform configuration behavior such as:
 - Output wiring.
 - Exact tag pass-through.
 - Security baseline settings.
+- Storage firewall default-deny behavior.
+- Empty network allow lists by default.
+- Explicit network IP rule, subnet ID, and bypass pass-through.
 - Public network access bootstrap exception wiring.
 - Hierarchical namespace wiring.
 - The `id` and `primary_blob_endpoint` outputs being derived from the managed

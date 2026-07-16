@@ -25,6 +25,11 @@ module "storage_account" {
   hierarchical_namespace_enabled = true
   public_network_access_enabled  = true
 
+  # Documentation-only placeholder from TEST-NET-3.
+  # Real bootstrap deployments must supply the current runner/developer
+  # public egress IP range or an approved subnet ID.
+  network_ip_rules = ["203.0.113.10"]
+
   tags = {
     business_unit       = "placeholder-business-unit"
     cost_center         = "placeholder-cost-center"

@@ -96,3 +96,37 @@ variable "hierarchical_namespace_enabled" {
   default     = false
   nullable    = false
 }
+
+variable "network_bypass" {
+  description = "Storage firewall bypass values for trusted Azure platform traffic. Valid values are Logging, Metrics, AzureServices, and None."
+  type        = set(string)
+  default     = []
+  nullable    = false
+
+  validation {
+    condition = alltrue([
+      for value in var.network_bypass :
+      contains(["Logging", "Metrics", "AzureServices", "None"], value)
+    ])
+    error_message = "Network bypass values must be one or more of: Logging, Metrics, AzureServices, None."
+  }
+
+  validation {
+    condition     = !(contains(var.network_bypass, "None") && length(var.network_bypass) > 1)
+    error_message = "Network bypass value None must not be combined with Logging, Metrics, or AzureServices."
+  }
+}
+
+variable "network_ip_rules" {
+  description = "Public IPv4 addresses or CIDR ranges allowed through the storage firewall. Defaults to an empty allow list."
+  type        = set(string)
+  default     = []
+  nullable    = false
+}
+
+variable "network_subnet_ids" {
+  description = "Virtual network subnet resource IDs allowed through the storage firewall. Defaults to an empty allow list."
+  type        = set(string)
+  default     = []
+  nullable    = false
+}

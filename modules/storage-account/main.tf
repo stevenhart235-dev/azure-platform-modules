@@ -14,5 +14,12 @@ resource "azurerm_storage_account" "this" {
   public_network_access_enabled = var.public_network_access_enabled
   is_hns_enabled                = var.hierarchical_namespace_enabled
 
+  network_rules {
+    default_action             = "Deny"
+    bypass                     = var.network_bypass
+    ip_rules                   = var.network_ip_rules
+    virtual_network_subnet_ids = var.network_subnet_ids
+  }
+
   tags = var.tags
 }

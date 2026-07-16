@@ -57,6 +57,26 @@ run "valid_storage_account_contract" {
     condition     = length(output.id) > 0
     error_message = "The id output must be non-empty after the mocked apply."
   }
+
+  assert {
+    condition     = azurerm_storage_account.this.network_rules[0].default_action == "Deny"
+    error_message = "The storage firewall default action must be Deny."
+  }
+
+  assert {
+    condition     = length(azurerm_storage_account.this.network_rules[0].bypass) == 0
+    error_message = "The default network bypass allow list must be empty."
+  }
+
+  assert {
+    condition     = length(azurerm_storage_account.this.network_rules[0].ip_rules) == 0
+    error_message = "The default network IP allow list must be empty."
+  }
+
+  assert {
+    condition     = length(azurerm_storage_account.this.network_rules[0].virtual_network_subnet_ids) == 0
+    error_message = "The default network subnet allow list must be empty."
+  }
 }
 
 run "complete_storage_account_contract" {
@@ -70,6 +90,9 @@ run "complete_storage_account_contract" {
     account_replication_type       = "ZRS"
     hierarchical_namespace_enabled = true
     public_network_access_enabled  = true
+    network_bypass                 = ["Logging", "Metrics"]
+    network_ip_rules               = ["203.0.113.10"]
+    network_subnet_ids             = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example-network-001/providers/Microsoft.Network/virtualNetworks/vnet-example-001/subnets/snet-example-001"]
   }
 
   assert {
@@ -115,6 +138,26 @@ run "complete_storage_account_contract" {
   assert {
     condition     = azurerm_storage_account.this.infrastructure_encryption_enabled == true
     error_message = "Infrastructure encryption must be enabled."
+  }
+
+  assert {
+    condition     = azurerm_storage_account.this.network_rules[0].default_action == "Deny"
+    error_message = "Enabling public network access must not change the storage firewall default action to Allow."
+  }
+
+  assert {
+    condition     = toset(azurerm_storage_account.this.network_rules[0].bypass) == toset(["Logging", "Metrics"])
+    error_message = "Network bypass values must pass through to the storage account firewall."
+  }
+
+  assert {
+    condition     = toset(azurerm_storage_account.this.network_rules[0].ip_rules) == toset(["203.0.113.10"])
+    error_message = "Network IP rules must pass through to the storage account firewall."
+  }
+
+  assert {
+    condition     = toset(azurerm_storage_account.this.network_rules[0].virtual_network_subnet_ids) == toset(["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example-network-001/providers/Microsoft.Network/virtualNetworks/vnet-example-001/subnets/snet-example-001"])
+    error_message = "Network subnet IDs must pass through to the storage account firewall."
   }
 }
 
@@ -201,6 +244,36 @@ run "invalid_account_replication_type" {
 
   expect_failures = [
     var.account_replication_type,
+  ]
+}
+
+run "invalid_network_bypass_value" {
+  command = plan
+
+  variables {
+    name                = "stexampleinvalid008"
+    resource_group_name = "rg-example-invalid-bypass-001"
+    location            = "placeholder-region"
+    network_bypass      = ["Storage"]
+  }
+
+  expect_failures = [
+    var.network_bypass,
+  ]
+}
+
+run "invalid_network_bypass_none_combination" {
+  command = plan
+
+  variables {
+    name                = "stexampleinvalid009"
+    resource_group_name = "rg-example-invalid-bypass-002"
+    location            = "placeholder-region"
+    network_bypass      = ["None", "Logging"]
+  }
+
+  expect_failures = [
+    var.network_bypass,
   ]
 }
 
