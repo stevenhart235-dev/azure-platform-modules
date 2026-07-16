@@ -1,0 +1,92 @@
+name: Validate Terraform Modules
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate modules
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+
+      - name: Formatting
+        run: terraform fmt -check -recursive
+
+      - name: Module Validation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t modules < <(find modules -mindepth 1 -maxdepth 1 -type d | sort)
+
+          if [ "${#modules[@]}" -eq 0 ]; then
+            echo "No modules found under modules/*."
+            exit 1
+          fi
+
+          for module in "${modules[@]}"; do
+            echo "::group::${module}"
+            terraform -chdir="${module}" init -backend=false -input=false
+            terraform -chdir="${module}" validate
+            terraform -chdir="${module}" test
+            echo "::endgroup::"
+          done
+
+      - name: Example Validation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t examples < <(find modules -mindepth 3 -maxdepth 3 -type d -path 'modules/*/examples/*' | sort)
+
+          if [ "${#examples[@]}" -eq 0 ]; then
+            echo "No examples found under modules/*/examples/*."
+            exit 1
+          fi
+
+          # Example plans require Azure authentication. Authenticated planning
+          # belongs in a future trusted integration or release-validation
+          # workflow using GitHub OIDC and Microsoft Entra workload identity
+          # federation; untrusted or forked pull requests must not receive
+          # Azure credentials.
+          for example in "${examples[@]}"; do
+            echo "::group::${example}"
+            terraform -chdir="${example}" init -backend=false -input=false
+            terraform -chdir="${example}" validate
+            echo "::endgroup::"
+          done
+
+      - name: TFLint Setup
+        uses: terraform-linters/setup-tflint@v6
+
+      - name: TFLint
+        shell: bash
+        run: |
+          set -euo pipefail
+          tflint --init
+          tflint --recursive
+
+      - name: Trivy
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          hide-progress: true

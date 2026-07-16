@@ -1,66 +1,164 @@
 # azure-platform-modules
 
-Reusable Terraform modules for the Azure Platform Framework.
+Reusable Terraform child modules for the Azure Platform Framework.
 
-This repository contains environment-neutral Terraform child modules that can be
+This repository contains environment-neutral Terraform modules that can be
 consumed by platform deployment repositories. Modules are product artifacts:
-they expose stable inputs and outputs, are tested independently, and are
-released through immutable semantic version tags.
+they expose stable inputs and outputs, include module-local examples and tests,
+and are released through immutable semantic version tags when ready.
 
-## Repository Purpose
+## Current Milestone
 
-`azure-platform-modules` is responsible for:
+Current milestone: **M1 - Engineering Toolchain**.
 
-- Reusable Terraform modules.
-- Module examples.
-- Module tests and test fixtures.
-- Module documentation.
-- Module release notes and semantic versioning.
-- Azure Verified Module wrappers or compositions where approved.
+The repository scaffold is in place, and the first reusable module has been
+implemented. Work is still in progress for GitHub Actions, TFLint, Trivy, and
+release automation. Do not treat this repository as fully production-ready
+until the required validation and release gates are implemented and passing.
+
+## Implemented Modules
+
+| Module | Status | Notes |
+| --- | --- | --- |
+| `modules/resource-group` | Implemented, unreleased | Creates one Azure resource group with caller-supplied name, location, and tags. |
+
+The Resource Group module has not yet been given a stable semantic version
+release.
+
+## Current Validation Status
+
+Status snapshot as of 2026-07-16:
+
+- Resource Group native Terraform tests pass: 6 passed, 0 failed.
+- Basic and complete Resource Group examples validate and plan successfully.
+- No Azure resources were applied.
+- GitHub Actions implementation is not yet present.
+- TFLint and Trivy configuration are still in progress.
+
+This is a working status snapshot. Future pull requests must report the exact
+commands run and their results. Never claim validation passed unless the command
+actually ran.
+
+## Supported Toolchain Baseline
 
 Terraform is the authoritative Infrastructure as Code engine for this platform.
-Terraform is the required engine for module validation, release acceptance, and
-future module automation. OpenTofu compatibility is not currently a supported
-contract.
+OpenTofu compatibility is not part of the supported contract.
+
+Current accepted baseline:
+
+- Approved Terraform execution version: `1.15.8`.
+- Reusable module minimum Terraform version: `>= 1.7.0`.
+- Reusable module AzureRM range: `>= 4.0.0, < 5.0.0`.
+- AzureRM release-validation version: `4.80.0`.
+- AzAPI is excluded until a real platform capability justifies it.
+
+Reusable child modules declare compatibility constraints. Root deployments and
+runnable root examples own provider configuration and dependency lock files.
+
+## Repository Layout
+
+```text
+.
+|-- docs/
+|   `-- ai/
+|       `-- assistant-guide.md
+|-- examples/
+|   `-- README.md
+|-- modules/
+|   |-- README.md
+|   `-- resource-group/
+|       |-- README.md
+|       |-- main.tf
+|       |-- variables.tf
+|       |-- outputs.tf
+|       |-- versions.tf
+|       |-- examples/
+|       |   |-- basic/
+|       |   `-- complete/
+|       `-- tests/
+|-- scripts/
+|   `-- README.md
+|-- tests/
+|   `-- README.md
+|-- CHANGELOG.md
+|-- CODEOWNERS
+|-- CONTRIBUTING.md
+|-- README.md
+`-- SECURITY.md
+```
+
+## What Belongs Here
+
+- Reusable Terraform child modules.
+- Module-local tests.
+- Module-local examples.
+- Module documentation.
+- Validation tooling.
+- Release notes.
+- Approved Azure Verified Module wrappers or compositions.
 
 ## What Must Not Be Committed
 
-Modules must not contain real or environment-specific values, including:
-
-- Tenant IDs.
-- Subscription IDs.
-- Azure regions.
-- CIDR ranges or enterprise IP allocations.
-- Real resource names.
-- Credentials, secrets, private keys, or tokens.
-- Environment-specific configuration.
-- Provider configuration.
-- Backend configuration.
+- Foundation or connectivity root deployments.
+- Backend configuration in child modules.
+- Provider configuration in child modules.
+- Environment `tfvars` files.
 - Terraform state, state backups, or plan files.
+- Credentials, secrets, private keys, tokens, or pipeline secrets.
+- Real tenant IDs or subscription IDs.
+- Enterprise CIDRs or environment-specific values.
+- Mutable production module references.
 
-Environment-specific configuration belongs in deployment repositories such as
-`azure-platform-foundation` and `azure-platform-connectivity`, not in reusable
-modules.
+Runnable examples may configure providers because examples are root modules.
+Examples must not configure backends or contain real environment values.
 
 ## Module Consumption
 
-Deployment repositories must consume modules through immutable semantic version
-tags. They must not depend on mutable branches such as `main` for production or
-release-bound deployment code.
+Deployment repositories must consume reusable modules through immutable module
+references, such as semantic version tags or approved commit SHAs. Production
+deployment code must not reference mutable branches such as `main`.
 
-Semantic versioning expectations:
+Independent module versioning is the expected direction for this repository.
+The exact release tag naming convention must be documented before stable
+module releases are created.
 
-- `MAJOR` for breaking changes.
-- `MINOR` for backward-compatible new functionality.
-- `PATCH` for backward-compatible fixes or documentation corrections.
+## Local Validation Commands
 
-## Azure Verified Modules
+Run the relevant checks for the module or documentation being changed.
 
-Azure Verified Modules should be adopted directly, wrapped, or composed where
-they satisfy platform requirements. Wrappers or compositions should exist only
-when they enforce a meaningful platform contract such as naming, tagging,
-diagnostics, private networking, identity, RBAC, policy, or other reusable
-standards.
+Resource Group module examples:
+
+```powershell
+terraform fmt -recursive modules/resource-group
+Set-Location modules/resource-group
+terraform test
+```
+
+Example validation:
+
+```powershell
+Set-Location examples/basic
+terraform init
+terraform validate
+terraform plan
+
+Set-Location ../complete
+terraform init
+terraform validate
+terraform plan
+```
+
+Repository-wide future gates:
+
+```powershell
+terraform fmt -recursive .
+terraform test
+tflint --recursive
+trivy config .
+```
+
+TFLint and Trivy configuration are still in progress. Do not report those gates
+as passing until they are implemented and run.
 
 ## Authoritative Standards
 
@@ -70,46 +168,45 @@ standards rather than copying or redefining them.
 
 Relevant source documents:
 
+- `../azure-platform-architecture/docs/ai/assistant-guide.md`
 - `../azure-platform-architecture/docs/adr/0001-iac-engine.md`
 - `../azure-platform-architecture/docs/adr/0002-repository-separation.md`
+- `../azure-platform-architecture/docs/adr/0003-terraform-toolchain-baseline.md`
 - `../azure-platform-architecture/docs/standards/repository-standard.md`
 - `../azure-platform-architecture/docs/standards/terraform-module-standard.md`
+- `../azure-platform-architecture/docs/standards/naming-standard.md`
+- `../azure-platform-architecture/docs/standards/tagging-standard.md`
+- `../azure-platform-architecture/docs/standards/versioning-standard.md`
+- `../azure-platform-architecture/docs/standards/engineering-validation-standard.md`
 
-## Ownership
+AI assistants and new contributors should also read
+`docs/ai/assistant-guide.md` before making changes.
 
-`CODEOWNERS` currently uses role-oriented placeholder teams. These placeholders
-must be replaced when repository teams are configured in the source-control
-platform.
+## Current Limitations
 
-Current placeholders:
+- No GitHub Actions workflows have been added.
+- TFLint and Trivy are not yet implemented for this repository.
+- The Resource Group module is implemented but unreleased.
+- Stable release compatibility must still be validated against the approved
+  matrix before a stable module release.
+- No Azure resources should be applied from this repository as part of routine
+  module development.
+- CODEOWNERS uses placeholder role-oriented teams until source-control teams
+  are configured.
 
-- `@azure-platform/module-maintainers`
-- `@azure-platform/security-reviewers`
-- `@azure-platform/docs-maintainers`
+## Contribution Workflow
 
-## Future Directory Model
+All changes should be made through reviewed pull requests.
 
-The expected module layout under `modules/` is:
+Before opening a pull request:
 
-```text
-modules/
-  <module-name>/
-    main.tf
-    variables.tf
-    outputs.tf
-    versions.tf
-    locals.tf
-    README.md
-    examples/
-      basic/
-      complete/
-    tests/
-```
+1. Read the relevant ADRs and standards in `azure-platform-architecture`.
+2. Confirm the change belongs in `azure-platform-modules`.
+3. Keep the pull request focused on one coherent change.
+4. Do not add prohibited content.
+5. Run applicable validation commands.
+6. Document validation evidence, risk, rollback notes, and version impact.
+7. Request review from the responsible CODEOWNERS.
 
-Optional Terraform files such as `data.tf`, `diagnostics.tf`,
-`role_assignments.tf`, or `private_endpoints.tf` may be added when they improve
-readability. Child modules must declare required providers and Terraform version
-constraints, but must not configure providers or backends.
-
-No Azure modules are implemented yet. This repository currently contains only
-the foundation required before module development begins.
+Never commit or push generated Terraform state, plan files, credentials, local
+override files, or environment-specific configuration.
